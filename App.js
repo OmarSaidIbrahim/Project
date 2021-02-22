@@ -27,11 +27,21 @@ export async function hasLocationPermission(){
 
 export default class App extends Component {
 
-  state = {
-    latitude: 37.78825,
-    longitude: -122.4324,
-    location: null
-	};
+  constructor(props) {   
+    super(props)
+    
+    this.state={
+      latitude: 37.78825,
+      longitude: -122.4324,
+      location: null,
+      postcode: null,
+      city: null,
+      data: "ok"
+    }
+    
+  }
+
+
 
   async componentDidMount() {
     if (await hasLocationPermission()) {
@@ -42,6 +52,7 @@ export default class App extends Component {
           const longitude = JSON.stringify(position.coords.longitude);
           const location  = JSON.stringify(position);
           this.setState({ latitude, longitude });
+          this.getPostcodeAndCityFromApi();
         },
         (error) => {
           // See error code charts below.
@@ -52,8 +63,27 @@ export default class App extends Component {
     }
   }
   
+  getPostcodeAndCityFromApi = () => {
+    return fetch('https://api.postcodes.io/postcodes?lon='+this.state.longitude+'&lat='+this.state.latitude+'')
+      .then(response => response.json())
+      .then((response) => {
+        const postcode = JSON.stringify(response.result[0].postcode);
+        const city = JSON.stringify(response.result[0].admin_district);
+        this.setState({postcode, city})
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
 
   render() {
+    var markers = [
+      {
+        latitude: 51.514680,
+        longitude: -0.302530,
+        title: 'River Island',
+      }
+    ];
     return (
       <View style={styles.container}>
         <Text style={styles.myText}>Your position is: {this.state.latitude}</Text>
@@ -73,8 +103,16 @@ export default class App extends Component {
             longitude : Number(this.state.longitude) 
           }}
         />
+        <Marker
+          coordinate={{ 
+            latitude: 51.5130103,
+            longitude: -0.3029769,
+          }}
+          title = "River Island"
+        />
         </MapView>
         </View>
+        <Text>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>
       </View>
     )
   }
