@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, View, StyleSheet, PermissionsAndroid, Alert } from 'react-native'
+import { Text, View, StyleSheet, PermissionsAndroid, Image, Modal, Pressable, Dimensions } from 'react-native'
 import MapView, {Marker}  from 'react-native-maps';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Geolocation from 'react-native-geolocation-service';
@@ -24,6 +24,28 @@ export async function hasLocationPermission(){
   }
 }
 
+const CustomMarker = () => (
+  <View
+    style={{
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#007bff",
+      padding: 3,
+      borderRadius: 5,
+
+    }}
+  >
+    <Image
+        style={{
+          width: 50,
+          height: 50
+        }}
+        source={{
+          uri: 'https://www.thequays.co.uk/media/uploads/river_island_logo.png',
+        }}
+      />
+  </View>
+);
 
 export default class App extends Component {
 
@@ -31,17 +53,16 @@ export default class App extends Component {
     super(props)
     
     this.state={
-      latitude: 37.78825,
-      longitude: -122.4324,
+      latitude: null,
+      longitude: null,
       location: null,
       postcode: null,
       city: null,
-      data: "ok"
+      data: "ok",
+      modalVisible: false
     }
     
   }
-
-
 
   async componentDidMount() {
     if (await hasLocationPermission()) {
@@ -77,16 +98,10 @@ export default class App extends Component {
   };
 
   render() {
-    var markers = [
-      {
-        latitude: 51.514680,
-        longitude: -0.302530,
-        title: 'River Island',
-      }
-    ];
     return (
       <View style={styles.container}>
-        <Text style={styles.myText}>Your position is: {this.state.latitude}</Text>
+        
+        <Text style={styles.myText}>You are here !!</Text>
         <View style={styles.textWrapper}>
         <MapView
           style={styles.map}
@@ -97,22 +112,48 @@ export default class App extends Component {
             longitudeDelta: 0.0321,
           }}
         >
-        <Marker
-          coordinate={{ 
-            latitude : Number(this.state.latitude), 
-            longitude : Number(this.state.longitude) 
-          }}
-        />
-        <Marker
-          coordinate={{ 
-            latitude: 51.5130103,
-            longitude: -0.3029769,
-          }}
-          title = "River Island"
-        />
+          <Marker
+            coordinate={{ 
+              latitude : Number(this.state.latitude), 
+              longitude : Number(this.state.longitude) 
+            }}
+            tracksViewChanges={false}
+          />
+          <Marker
+            coordinate={{ 
+              latitude: 51.5130103,
+              longitude: -0.3029769,
+            }}
+            onPress={()=>{this.setState({modalVisible: true, latitude: 51.5130103, longitude: -0.3029769})}}
+          >
+            <CustomMarker 
+              tracksViewChanges={false}
+            />
+          </Marker>
         </MapView>
         </View>
-        <Text>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>
+        <Text style={{alignSelf: "center"}}>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>
+        <View>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={this.state.modalVisible}
+            onRequestClose={() => {
+              this.setState({modalVisible: false})
+            }}
+          >
+            <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:5, borderTopWidth:5,borderRightWidth: 5, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black", alignItems: "center"}}>
+              <View >
+                <Text >Hello World!</Text>
+                <Pressable
+                  onPress={() => this.setState({modalVisible: false})}
+                >
+                  <Text>Hide Modal</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+        </View>
       </View>
     )
   }
@@ -123,7 +164,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     //justifyContent: "center", 
-    alignItems: "center"
+    //alignItems: "left"
   },
   textWrapper: {
     height: hp('70%'), // 70% of height device screen
@@ -132,9 +173,11 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   myText: {
-    fontSize: hp('4%') // End result looks like the provided UI mockup
+    fontSize: hp('4%'), // End result looks like the provided UI mockup
+    alignSelf: "center"
   },
   map: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFillObject,
+    width: Dimensions.get('window').width
   },
  });
