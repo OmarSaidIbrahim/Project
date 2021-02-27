@@ -3,26 +3,7 @@ import { Text, View, StyleSheet, PermissionsAndroid, Image, Modal, Pressable, Di
 import MapView, {Marker}  from 'react-native-maps';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Geolocation from 'react-native-geolocation-service';
-
-export async function hasLocationPermission(){
-  try {
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      {
-        'title': 'ReactNativeCode Location Permission',
-        'message': 'ReactNativeCode App needs access to your location '
-      }
-    )
-    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-      return true;
-    }
-    else {
-      return false
-    }
-  } catch (err) {
-    console.warn(err)
-  }
-}
+import { Header} from 'react-native-elements';
 
 const CustomMarker = () => (
   <View
@@ -32,7 +13,6 @@ const CustomMarker = () => (
       backgroundColor: "#007bff",
       padding: 3,
       borderRadius: 5,
-
     }}
   >
     <Image
@@ -64,11 +44,30 @@ export default class App extends Component {
     
   }
 
-  async componentDidMount() {
-    if (await hasLocationPermission()) {
+  hasLocationPermission = () => {
+    try {
+      const granted = PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          'title': 'ReactNativeCode Location Permission',
+          'message': 'ReactNativeCode App needs access to your location '
+        }
+      )
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      }
+      else {
+        return false
+      }
+    } catch (err) {
+      console.warn(err)
+    }
+  }
+  
+  componentDidMount() {
+    if (this.hasLocationPermission) {
       Geolocation.getCurrentPosition(
         (position) => {
-          console.log(position)
           const latitude = JSON.stringify(position.coords.latitude);
           const longitude = JSON.stringify(position.coords.longitude);
           const location  = JSON.stringify(position);
@@ -111,20 +110,15 @@ export default class App extends Component {
             latitudeDelta: 0.0322,
             longitudeDelta: 0.0321,
           }}
+          showsUserLocation = {true}
         >
-          <Marker
-            coordinate={{ 
-              latitude : Number(this.state.latitude), 
-              longitude : Number(this.state.longitude) 
-            }}
-            tracksViewChanges={false}
-          />
+          
           <Marker
             coordinate={{ 
               latitude: 51.5130103,
               longitude: -0.3029769,
             }}
-            onPress={()=>{this.setState({modalVisible: true, latitude: 51.5130103, longitude: -0.3029769})}}
+            onPress={()=>{this.setState({modalVisible: true, latitude: (51.5130103-0.004), longitude: -0.3029769})}}
           >
             <CustomMarker 
               tracksViewChanges={false}
@@ -139,17 +133,26 @@ export default class App extends Component {
             transparent={true}
             visible={this.state.modalVisible}
             onRequestClose={() => {
-              this.setState({modalVisible: false})
+              this.setState({modalVisible: false, latitude: (51.5130103+0.004)})
             }}
           >
-            <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:5, borderTopWidth:5,borderRightWidth: 5, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black", alignItems: "center"}}>
-              <View >
-                <Text >Hello World!</Text>
-                <Pressable
-                  onPress={() => this.setState({modalVisible: false})}
-                >
-                  <Text>Hide Modal</Text>
-                </Pressable>
+            <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:3, borderTopWidth:3,borderRightWidth: 3, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black"}}>
+              <Header
+                leftComponent={{ text: 'Close', style: { color: '#fff' } }}
+                centerComponent={{ text: 'River Island', style: { color: '#fff' } }}
+                rightComponent={{ text: 'Navigate', style: { color: '#fff' } }}
+                containerStyle={{
+                  backgroundColor: '#3D6DCC',
+                  justifyContent: 'space-around',
+                  borderTopLeftRadius: 7,
+                  borderTopRightRadius:7,
+                  height:50
+                }}
+              />
+              <View style={{flexDirection: "row", justifyContent:"space-evenly" , margin: 50}}>
+                <Text>Product</Text>
+                <Text>Product</Text>
+                <Text>Product</Text>
               </View>
             </View>
           </Modal>
