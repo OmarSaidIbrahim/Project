@@ -27,6 +27,33 @@ const CustomMarker = () => (
   </View>
 );
 
+const shopMarkers = {
+  markers: [{
+    title: 'H&M',
+    coordinates: {
+      latitude: 51.512538,
+      longitude: -0.303592
+    },
+    imageUri: 'https://ceowatermandate.org/wp-content/uploads/2017/08/HM.png'
+  },
+  {
+    title: 'Footlocker',
+    coordinates: {
+      latitude: 51.5127815,
+      longitude: -0.3027705
+    },  
+    imageUri: 'https://diginomica.com/sites/default/files/images/2016-08/foot-locker-final.jpg'
+  },
+  {
+    title: 'River Island',
+    coordinates: {
+      latitude: 51.5130103,
+      longitude: -0.3029769,
+    }, 
+    imageUri: 'https://www.thequays.co.uk/media/uploads/river_island_logo.png'
+  }]
+}
+
 export default class App extends Component {
 
   constructor(props) {   
@@ -38,8 +65,8 @@ export default class App extends Component {
       location: null,
       postcode: null,
       city: null,
-      data: "ok",
-      modalVisible: false
+      modalVisible: false,
+      modalTitle: null
     }
     
   }
@@ -112,19 +139,39 @@ export default class App extends Component {
           }}
           showsUserLocation = {true}
         >
-          
-          <Marker
-            coordinate={{ 
-              latitude: 51.5130103,
-              longitude: -0.3029769,
-            }}
-            onPress={()=>{this.setState({modalVisible: true, latitude: (51.5130103-0.004), longitude: -0.3029769})}}
-          >
-            <CustomMarker 
+
+          {shopMarkers.markers.map((marker,i) => (
+            <MapView.Marker 
+              coordinate={marker.coordinates}
+              title={marker.title}
+              key={i}
               tracksViewChanges={false}
-            />
-          </Marker>
+              onPress={()=>{this.setState({modalVisible: true, latitude: marker.coordinates.latitude-0.004, longitude: marker.coordinates.longitude, modalTitle: marker.title})}}
+            >
+              <View
+                style={{
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "#007bff",
+                  padding: 3,
+                  borderRadius: 5,
+                }}
+              >
+                <Image
+                    style={{
+                      width: 50,
+                      height: 50
+                    }}
+                    source={{
+                      uri: marker.imageUri,
+                    }}
+                />
+              </View>
+            </MapView.Marker>
+          ))}
+
         </MapView>
+
         </View>
         <Text style={{alignSelf: "center"}}>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>
         <View>
@@ -133,13 +180,13 @@ export default class App extends Component {
             transparent={true}
             visible={this.state.modalVisible}
             onRequestClose={() => {
-              this.setState({modalVisible: false, latitude: (51.5130103+0.004)})
+              this.setState({modalVisible: false, latitude: ((this.state.latitude)+0.004)})
             }}
           >
             <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:3, borderTopWidth:3,borderRightWidth: 3, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black"}}>
               <Header
                 leftComponent={{ text: 'Close', style: { color: '#fff' } }}
-                centerComponent={{ text: 'River Island', style: { color: '#fff' } }}
+                centerComponent={{ text: this.state.modalTitle, style: { color: '#fff' } }}
                 rightComponent={{ text: 'Navigate', style: { color: '#fff' } }}
                 containerStyle={{
                   backgroundColor: '#3D6DCC',
