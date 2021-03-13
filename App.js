@@ -4,29 +4,9 @@ import MapView, {Marker}  from 'react-native-maps';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Geolocation from 'react-native-geolocation-service';
 import { Header} from 'react-native-elements';
+import { getDistance } from 'geolib';
 
-const CustomMarker = () => (
-  <View
-    style={{
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#007bff",
-      padding: 3,
-      borderRadius: 5,
-    }}
-  >
-    <Image
-        style={{
-          width: 50,
-          height: 50
-        }}
-        source={{
-          uri: 'https://www.thequays.co.uk/media/uploads/river_island_logo.png',
-        }}
-      />
-  </View>
-);
-
+//TEST MARKERS
 const shopMarkers = {
   markers: [{
     title: 'H&M',
@@ -53,9 +33,9 @@ const shopMarkers = {
     imageUri: 'https://www.thequays.co.uk/media/uploads/river_island_logo.png'
   }]
 }
-
+//----------------
+//BEGINNING
 export default class App extends Component {
-
   constructor(props) {   
     super(props)
     
@@ -66,11 +46,18 @@ export default class App extends Component {
       postcode: null,
       city: null,
       modalVisible: false,
-      modalTitle: null
+      modalTitle: null,
+      //TESTS IN LONDON
+      testLat: 51.50727,
+      testLong: -0.1279706,
+      testPostCode: null,
+      testCity: null,
+      //ARRAY OF SHOP COORDINATES
+      shopsCoordinates: []
     }
     
   }
-
+  //APP CHECKS IF USER HAS GPS ACTIVATED
   hasLocationPermission = () => {
     try {
       const granted = PermissionsAndroid.request(
@@ -90,9 +77,9 @@ export default class App extends Component {
       console.warn(err)
     }
   }
-  
+  //BEFORE MOUNTING THE APP, THIS METHOD RECEIVES THE USER COORDINATES
   componentDidMount() {
-    if (this.hasLocationPermission) {
+    /*if (this.hasLocationPermission) {
       Geolocation.getCurrentPosition(
         (position) => {
           const latitude = JSON.stringify(position.coords.latitude);
@@ -107,16 +94,57 @@ export default class App extends Component {
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
       );
-    }
-  }
-  
-  getPostcodeAndCityFromApi = () => {
-    return fetch('https://api.postcodes.io/postcodes?lon='+this.state.longitude+'&lat='+this.state.latitude+'')
+    }*/
+    //THIS METHOD BELOW WILL GET THE POSTCODE (UK ONLY) FROM LATITUDE AND LONGITUDE
+    this.getPostcodeAndCityFromApi();
+    //GETS THE NEAREST STORES FROM USER LOCATION (TEST IN LONDON)
+    return fetch("https://www.bershka.com/itxrest/2/bam/store/44009506/physical-store?latitude="+this.state.testLat+"&longitude="+this.state.testLong+"&countryCode=GB&max=10&appId=2&languageId=-1")
       .then(response => response.json())
       .then((response) => {
-        const postcode = JSON.stringify(response.result[0].postcode);
-        const city = JSON.stringify(response.result[0].admin_district);
-        this.setState({postcode, city})
+        var x = 0
+        //EACH STORE COLLECTED WILL BE SAVED WITH NAME AND ID AND COORDINATES INTO THE ARRAY OF DICTIONARY
+        while(x < response.closerStores.length)
+        {
+          //THIS METHOD BELOW WILL CALCULATE THE DISTANCE BETWEEN TWO COORDINATES
+          //MUST BE UPDATED BY THE USER INPUT MILES RANGE
+          var dis = getDistance(
+            {latitude: this.state.testLat, longitude: this.state.testLong},
+            {latitude: Number(JSON.stringify(response.closerStores[x].latitude)), longitude: Number(JSON.stringify(response.closerStores[x].longitude))},
+          );
+          //ONLY THE STORES IN THE RANGE WILL BE DISPLAYED
+          if(dis < 8046)
+          {
+            const newShop = {
+              shopId: JSON.stringify(response.closerStores[x].id),
+              shopName: JSON.stringify(response.closerStores[x].name),
+              shopLatitude: Number(JSON.stringify(response.closerStores[x].latitude)),
+              shopLongitude: Number(JSON.stringify(response.closerStores[x].longitude))
+            }
+            const newRecord = this.state.shopsCoordinates
+            newRecord.push(newShop)
+            this.setState({
+              shopsCoordinates: newRecord
+            })
+          }
+          x=x+1
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+  //THE METHOD BELOW WILL RETURN THE CITY AND POSTCODE FROM COORDINATES (UK ONLY)
+  getPostcodeAndCityFromApi = () => {
+    //return fetch('https://api.postcodes.io/postcodes?lon='+this.state.longitude+'&lat='+this.state.latitude+'')
+    return fetch('https://api.postcodes.io/postcodes?lon='+this.state.testLong+'&lat='+this.state.testLat+'')
+      .then(response => response.json())
+      .then((response) => {
+        //const postcode = JSON.stringify(response.result[0].postcode);
+        //const city = JSON.stringify(response.result[0].admin_district);
+        const testPostCode = JSON.stringify(response.result[0].postcode);
+        const testCity = JSON.stringify(response.result[0].admin_district);
+        //this.setState({postcode, city})
+        this.setState({testPostCode,testCity})
       })
       .catch((error) => {
         console.error(error);
@@ -126,20 +154,22 @@ export default class App extends Component {
   render() {
     return (
       <View style={styles.container}>
-        
+
         <Text style={styles.myText}>You are here !!</Text>
+
         <View style={styles.textWrapper}>
+        {/* USER LOCATION DISPLAYED */}
         <MapView
           style={styles.map}
           region={{
-            latitude: Number(this.state.latitude),
-            longitude: Number(this.state.longitude),
+            latitude: this.state.testLat,//Number(this.state.latitude),
+            longitude: this.state.testLong,//Number(this.state.longitude),
             latitudeDelta: 0.0322,
             longitudeDelta: 0.0321,
           }}
           showsUserLocation = {true}
         >
-
+          {/* TEST CUSTOM MARKER */}
           {shopMarkers.markers.map((marker,i) => (
             <MapView.Marker 
               coordinate={marker.coordinates}
@@ -169,11 +199,25 @@ export default class App extends Component {
               </View>
             </MapView.Marker>
           ))}
+          {/* SHOPS FOUND NEAR THE USER LOCATION AND DISPLAYED WITH A MARKER */}
+          {this.state.shopsCoordinates.map((index,i) => (
+            <Marker
+              coordinate={{
+                latitude: index.shopLatitude,
+                longitude: index.shopLongitude
+              }}
+              title={index.shopName}
+              key={i}
+              tracksViewChanges={false}
+            />
+          ))}
 
         </MapView>
-
         </View>
-        <Text style={{alignSelf: "center"}}>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>
+        {/*<Text style={{alignSelf: "center"}}>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>*/}
+        {/* TEST */}
+        <Text style={{alignSelf: "center"}}>Postcode: {this.state.testPostCode} - Borough of: {this.state.testCity}</Text>
+        {/* MODAL OPENS WHEN USER CLICKS ON MARKERS */}
         <View>
           <Modal
             animationType="slide"
