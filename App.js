@@ -53,7 +53,9 @@ export default class App extends Component {
       testPostCode: null,
       testCity: null,
       //ARRAY OF SHOP COORDINATES
-      shopsCoordinates: []
+      shopsCoordinates: [],
+      //RECORD OF ALL PRODUCTS IN THE WEBSITE
+      allProducts: []
     }
     
   }
@@ -78,7 +80,7 @@ export default class App extends Component {
     }
   }
   //BEFORE MOUNTING THE APP, THIS METHOD RECEIVES THE USER COORDINATES
-  componentDidMount() {
+  async componentDidMount() {
     /*if (this.hasLocationPermission) {
       Geolocation.getCurrentPosition(
         (position) => {
@@ -97,36 +99,120 @@ export default class App extends Component {
     }*/
     //THIS METHOD BELOW WILL GET THE POSTCODE (UK ONLY) FROM LATITUDE AND LONGITUDE
     this.getPostcodeAndCityFromApi();
-    //GETS THE NEAREST STORES FROM USER LOCATION (TEST IN LONDON)
+    //--------------------------------
+    this.fetchData();
+  }
+  fetchData = async () => {
+    const a = await this.getStoresNearby();
+    const b = await this.getAllProducts();
+    const c = await this.getProductsLocation();
+  }
+  //GET THE LOCATION OF ALL THE PRODUCTS FOUND
+  getProductsLocation = () => {
+    var urlShops = "physicalStoreId="+(+this.state.shopsCoordinates[0].shopId.slice(1,-1));
+    for(var i = 1; i < this.state.shopsCoordinates.length; i++)
+      urlShops = urlShops+"&physicalStoreId="+(+this.state.shopsCoordinates[i].shopId.slice(1,-1));
+    
+    console.log("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[0].slice(1,-1))+"?"+urlShops)
+    
+    var x = 0;
+    var counter;
+    while(x < this.state.allProducts.length)
+    {
+      //console.log(this.state.allProducts[1])
+      //"https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/1270076113140?physicalStoreId=
+      fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].slice(1,-1))+"?"+urlShops)
+      .then(response => response.json())
+      .then((response) => {
+        counter = 0;
+        console.log("lol")
+        if("stocks" in response)
+        {
+          console.log("Product: "+this.state.allProducts[x])
+          while(counter < response.stocks.length)
+          {
+            //SHOE SIZE = 8 (UK)
+            if(response.stocks[counter].sizeStocks.some((d) => Number(d.size) == (34+8)))
+            {
+              console.log("Available at: "+JSON.stringify(response.stocks[counter].physicalStoreId)+"\n")
+            }
+            else
+              console.log("Not available in this size")
+            counter++;
+          }
+        }
+        else{
+          console.log("No products available around you")
+        }
+        x++;
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+      
+    }
+  }
+  //GET STORE NEAR THE USER LOCATION
+  getStoresNearby = () => {
     return fetch("https://www.bershka.com/itxrest/2/bam/store/44009506/physical-store?latitude="+this.state.testLat+"&longitude="+this.state.testLong+"&countryCode=GB&max=10&appId=2&languageId=-1")
       .then(response => response.json())
       .then((response) => {
         var x = 0
+        var dis;
+        var newShop;
+        var newRecord;
         //EACH STORE COLLECTED WILL BE SAVED WITH NAME AND ID AND COORDINATES INTO THE ARRAY OF DICTIONARY
         while(x < response.closerStores.length)
         {
           //THIS METHOD BELOW WILL CALCULATE THE DISTANCE BETWEEN TWO COORDINATES
           //MUST BE UPDATED BY THE USER INPUT MILES RANGE
-          var dis = getDistance(
+          dis = getDistance(
             {latitude: this.state.testLat, longitude: this.state.testLong},
             {latitude: Number(JSON.stringify(response.closerStores[x].latitude)), longitude: Number(JSON.stringify(response.closerStores[x].longitude))},
           );
           //ONLY THE STORES IN THE RANGE WILL BE DISPLAYED
           if(dis < 8046)
           {
-            const newShop = {
+            newShop = {
               shopId: JSON.stringify(response.closerStores[x].id),
               shopName: JSON.stringify(response.closerStores[x].name),
               shopLatitude: Number(JSON.stringify(response.closerStores[x].latitude)),
               shopLongitude: Number(JSON.stringify(response.closerStores[x].longitude))
             }
-            const newRecord = this.state.shopsCoordinates
+            newRecord = this.state.shopsCoordinates
             newRecord.push(newShop)
-            this.setState({
-              shopsCoordinates: newRecord
-            })
+            this.setState({shopsCoordinates: newRecord})
           }
           x=x+1
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+  //GET ALL PRODUCTS OFF THE WEBSITE
+  getAllProducts = () => {
+    return fetch("https://www.bershka.com/itxrest/2/catalog/store/44009506/40259534/category/1010193202/product?languageId=-1")
+      .then(response => response.json())
+      .then((response) => {
+        var x = 0;
+        var newProduct = "";
+        var allProd;
+        while(x < response.products.length)
+        {
+          //products["products"][i]["bundleProductSummaries"][0]["detail"]["colors"][0]["sizes"][(p_size-5)]["partnumber"][0:13]
+          //TESTING WITH SHOE SIZE = 8 (UK)
+          try{
+            newProduct = JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[3].partnumber.substring(0,13))
+            //console.log(newProduct)
+            allProd = this.state.allProducts
+            allProd.push(newProduct)
+            this.setState({allProducts: allProd})
+            x = x + 1;
+          }
+          catch(err){
+            break;
+          }
         }
       })
       .catch((error) => {
@@ -209,6 +295,7 @@ export default class App extends Component {
               title={index.shopName}
               key={i}
               tracksViewChanges={false}
+              onPress={()=>{console.log(index.shopId)}}
             />
           ))}
 
