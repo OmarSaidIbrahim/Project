@@ -113,43 +113,43 @@ export default class App extends Component {
     for(var i = 1; i < this.state.shopsCoordinates.length; i++)
       urlShops = urlShops+"&physicalStoreId="+(+this.state.shopsCoordinates[i].shopId.slice(1,-1));
     
-    console.log("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[0].slice(1,-1))+"?"+urlShops)
+    //console.log("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[0].slice(1,-1))+"?"+urlShops)
     
     var x = 0;
     var counter;
     while(x < this.state.allProducts.length)
     {
-      //console.log(this.state.allProducts[1])
-      //"https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/1270076113140?physicalStoreId=
       fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].slice(1,-1))+"?"+urlShops)
       .then(response => response.json())
       .then((response) => {
         counter = 0;
-        console.log("lol")
-        if("stocks" in response)
+        if(response.stocks.length > 0)
         {
-          console.log("Product: "+this.state.allProducts[x])
+          //console.log("Product: "+(+this.state.allProducts[x].slice(1,-1)))
           while(counter < response.stocks.length)
           {
             //SHOE SIZE = 8 (UK)
+            console.log("Product #: "+(+this.state.allProducts[x].slice(1,-1)))
             if(response.stocks[counter].sizeStocks.some((d) => Number(d.size) == (34+8)))
             {
               console.log("Available at: "+JSON.stringify(response.stocks[counter].physicalStoreId)+"\n")
             }
             else
+            {
               console.log("Not available in this size")
+            }
             counter++;
           }
         }
         else{
           console.log("No products available around you")
         }
-        x++;
       })
-      .catch((error) => {
-        console.error(error);
+      .catch((error, response) => {
+        //console.log(error)
+        //console.log(response)
       });
-      
+      x=x+1;
     }
   }
   //GET STORE NEAR THE USER LOCATION
@@ -200,20 +200,20 @@ export default class App extends Component {
         var allProd;
         while(x < response.products.length)
         {
-          //products["products"][i]["bundleProductSummaries"][0]["detail"]["colors"][0]["sizes"][(p_size-5)]["partnumber"][0:13]
           //TESTING WITH SHOE SIZE = 8 (UK)
           try{
-            newProduct = JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[3].partnumber.substring(0,13))
+            newProduct = JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].partnumber.substring(0,13))
             //console.log(newProduct)
             allProd = this.state.allProducts
             allProd.push(newProduct)
-            this.setState({allProducts: allProd})
             x = x + 1;
           }
           catch(err){
             break;
           }
         }
+        allProd = [...new Set(allProd)];
+        this.setState({allProducts: allProd})
       })
       .catch((error) => {
         console.error(error);
@@ -242,6 +242,7 @@ export default class App extends Component {
       <View style={styles.container}>
 
         <Text style={styles.myText}>You are here !!</Text>
+        <Text>{this.state.allProducts}</Text>
 
         <View style={styles.textWrapper}>
         {/* USER LOCATION DISPLAYED */}
