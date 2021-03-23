@@ -55,7 +55,9 @@ export default class App extends Component {
       //ARRAY OF SHOP COORDINATES
       shopsCoordinates: [],
       //RECORD OF ALL PRODUCTS IN THE WEBSITE
-      allProducts: []
+      allProducts: [],
+      //DATA
+      data: []
     }
     
   }
@@ -108,7 +110,7 @@ export default class App extends Component {
     const c = await this.getProductsLocation();
   }
   //GET THE LOCATION OF ALL THE PRODUCTS FOUND
-  getProductsLocation = () => {
+  getProductsLocation = async () => {
     var urlShops = "physicalStoreId="+(+this.state.shopsCoordinates[0].shopId.slice(1,-1));
     for(var i = 1; i < this.state.shopsCoordinates.length; i++)
       urlShops = urlShops+"&physicalStoreId="+(+this.state.shopsCoordinates[i].shopId.slice(1,-1));
@@ -117,22 +119,27 @@ export default class App extends Component {
     
     var x = 0;
     var counter;
+    var prod;
+    var shops = [];
+    var dataThat;
+    var dataThis = [];
     while(x < this.state.allProducts.length)
     {
-      fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].slice(1,-1))+"?"+urlShops)
+      await fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].slice(1,-1))+"?"+urlShops)
       .then(response => response.json())
       .then((response) => {
         counter = 0;
+        console.log("Product: "+(+this.state.allProducts[x].slice(1,-1)))
         if(response.stocks.length > 0)
         {
-          //console.log("Product: "+(+this.state.allProducts[x].slice(1,-1)))
+          prod = (+this.state.allProducts[x].slice(1,-1))
           while(counter < response.stocks.length)
           {
             //SHOE SIZE = 8 (UK)
-            console.log("Product #: "+(+this.state.allProducts[x].slice(1,-1)))
             if(response.stocks[counter].sizeStocks.some((d) => Number(d.size) == (34+8)))
             {
               console.log("Available at: "+JSON.stringify(response.stocks[counter].physicalStoreId)+"\n")
+              shops.push(JSON.stringify(response.stocks[counter].physicalStoreId))
             }
             else
             {
@@ -140,6 +147,14 @@ export default class App extends Component {
             }
             counter++;
           }
+          dataThat = {
+            prod_part_number: prod,
+            shop_id: shops
+          }
+          dataThis.push(dataThat)
+          dataThat = null;
+          prod = null;
+          shops = [];
         }
         else{
           console.log("No products available around you")
@@ -149,8 +164,11 @@ export default class App extends Component {
         //console.log(error)
         //console.log(response)
       });
+      
       x=x+1;
     }
+    console.log("end.")
+    console.log(dataThis)
   }
   //GET STORE NEAR THE USER LOCATION
   getStoresNearby = () => {
@@ -242,7 +260,6 @@ export default class App extends Component {
       <View style={styles.container}>
 
         <Text style={styles.myText}>You are here !!</Text>
-        <Text>{this.state.allProducts}</Text>
 
         <View style={styles.textWrapper}>
         {/* USER LOCATION DISPLAYED */}
