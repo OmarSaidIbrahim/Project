@@ -57,7 +57,11 @@ export default class App extends Component {
       //RECORD OF ALL PRODUCTS IN THE WEBSITE
       allProducts: [],
       //DATA
-      data: []
+      data: {},
+      //CLICKED SHOP
+      shopClicked: null,
+      //LOADING
+      loading: true
     }
     
   }
@@ -112,17 +116,20 @@ export default class App extends Component {
   //GET THE LOCATION OF ALL THE PRODUCTS FOUND
   getProductsLocation = async () => {
     var urlShops = "physicalStoreId="+(+this.state.shopsCoordinates[0].shopId.slice(1,-1));
+    var thisData = {}
+    thisData[(+this.state.shopsCoordinates[0].shopId.slice(1,-1))] = []
     for(var i = 1; i < this.state.shopsCoordinates.length; i++)
+    {
       urlShops = urlShops+"&physicalStoreId="+(+this.state.shopsCoordinates[i].shopId.slice(1,-1));
-    
+      thisData[(+this.state.shopsCoordinates[i].shopId.slice(1,-1))] = []
+    }
+    this.setState({data: thisData})
     //console.log("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[0].slice(1,-1))+"?"+urlShops)
     
     var x = 0;
     var counter;
     var prod;
-    var shops = [];
-    var dataThat;
-    var dataThis = [];
+    var test = this.state.data
     while(x < this.state.allProducts.length)
     {
       await fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].slice(1,-1))+"?"+urlShops)
@@ -139,36 +146,28 @@ export default class App extends Component {
             if(response.stocks[counter].sizeStocks.some((d) => Number(d.size) == (34+8)))
             {
               console.log("Available at: "+JSON.stringify(response.stocks[counter].physicalStoreId)+"\n")
-              shops.push(JSON.stringify(response.stocks[counter].physicalStoreId))
+              test[JSON.stringify(response.stocks[counter].physicalStoreId)].push(prod)
             }
             else
             {
-              console.log("Not available in this size")
+              console.log("Product not available with this size")
             }
             counter++;
           }
-          dataThat = {
-            prod_part_number: prod,
-            shop_id: shops
-          }
-          dataThis.push(dataThat)
-          dataThat = null;
-          prod = null;
-          shops = [];
         }
         else{
-          console.log("No products available around you")
+          console.log("This product is not available around you")
         }
       })
       .catch((error, response) => {
         //console.log(error)
         //console.log(response)
       });
-      
       x=x+1;
     }
     console.log("end.")
-    console.log(dataThis)
+    console.log(test)
+    this.setState({loading: false})
   }
   //GET STORE NEAR THE USER LOCATION
   getStoresNearby = () => {
@@ -203,10 +202,12 @@ export default class App extends Component {
           }
           x=x+1
         }
+        //this.setState({shopClicked: newRecord.shopId})
       })
       .catch((error) => {
         console.error(error);
       });
+      
   }
   //GET ALL PRODUCTS OFF THE WEBSITE
   getAllProducts = () => {
@@ -221,7 +222,6 @@ export default class App extends Component {
           //TESTING WITH SHOE SIZE = 8 (UK)
           try{
             newProduct = JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].partnumber.substring(0,13))
-            //console.log(newProduct)
             allProd = this.state.allProducts
             allProd.push(newProduct)
             x = x + 1;
@@ -273,7 +273,7 @@ export default class App extends Component {
           }}
           showsUserLocation = {true}
         >
-          {/* TEST CUSTOM MARKER */}
+          {/* TEST CUSTOM MARKER 
           {shopMarkers.markers.map((marker,i) => (
             <MapView.Marker 
               coordinate={marker.coordinates}
@@ -302,7 +302,7 @@ export default class App extends Component {
                 />
               </View>
             </MapView.Marker>
-          ))}
+          ))}*/}
           {/* SHOPS FOUND NEAR THE USER LOCATION AND DISPLAYED WITH A MARKER */}
           {this.state.shopsCoordinates.map((index,i) => (
             <Marker
@@ -313,7 +313,7 @@ export default class App extends Component {
               title={index.shopName}
               key={i}
               tracksViewChanges={false}
-              onPress={()=>{console.log(index.shopId)}}
+              onPress={()=>{this.setState({shopClicked: index.shopId,modalVisible: true, testLat: index.shopLatitude-0.004, testLong: index.shopLongitude, modalTitle: index.shopName})}}
             />
           ))}
 
@@ -322,6 +322,7 @@ export default class App extends Component {
         {/*<Text style={{alignSelf: "center"}}>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>*/}
         {/* TEST */}
         <Text style={{alignSelf: "center"}}>Postcode: {this.state.testPostCode} - Borough of: {this.state.testCity}</Text>
+        <Text style={{alignSelf: "center"}}>Loading: {this.state.loading ? "True" : "False"}</Text>
         {/* MODAL OPENS WHEN USER CLICKS ON MARKERS */}
         <View>
           <Modal
@@ -329,7 +330,7 @@ export default class App extends Component {
             transparent={true}
             visible={this.state.modalVisible}
             onRequestClose={() => {
-              this.setState({modalVisible: false, latitude: ((this.state.latitude)+0.004)})
+              this.setState({modalVisible: false, testLat: ((this.state.testLat)+0.004)})
             }}
           >
             <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:3, borderTopWidth:3,borderRightWidth: 3, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black"}}>
@@ -345,10 +346,8 @@ export default class App extends Component {
                   height:50
                 }}
               />
-              <View style={{flexDirection: "row", justifyContent:"space-evenly" , margin: 50}}>
-                <Text>Product</Text>
-                <Text>Product</Text>
-                <Text>Product</Text>
+              <View style={{flexDirection: "column", justifyContent:"space-evenly" , margin: 50}}>
+              {/*this.state.loading ? <Text>no products</Text> : this.content()*/}
               </View>
             </View>
           </Modal>
