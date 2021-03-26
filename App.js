@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, View, StyleSheet, PermissionsAndroid, Image, Modal, Pressable, Dimensions } from 'react-native'
+import { Text, View, StyleSheet, PermissionsAndroid, Image, Modal, Pressable, Dimensions, ScrollView } from 'react-native'
 import MapView, {Marker}  from 'react-native-maps';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Geolocation from 'react-native-geolocation-service';
@@ -58,10 +58,10 @@ export default class App extends Component {
       allProducts: [],
       //DATA
       data: {},
-      //CLICKED SHOP
+      //SHOP CLICKED BY THE USER
       shopClicked: null,
-      //LOADING
-      loading: true
+      //LOADING DATA
+      isLoaded: false
     }
     
   }
@@ -167,7 +167,7 @@ export default class App extends Component {
     }
     console.log("end.")
     console.log(test)
-    this.setState({loading: false})
+    this.setState({isLoaded: true})
   }
   //GET STORE NEAR THE USER LOCATION
   getStoresNearby = () => {
@@ -202,7 +202,7 @@ export default class App extends Component {
           }
           x=x+1
         }
-        //this.setState({shopClicked: newRecord.shopId})
+        this.setState({shopClicked: newRecord[0].shopId})
       })
       .catch((error) => {
         console.error(error);
@@ -313,7 +313,7 @@ export default class App extends Component {
               title={index.shopName}
               key={i}
               tracksViewChanges={false}
-              onPress={()=>{this.setState({shopClicked: index.shopId,modalVisible: true, testLat: index.shopLatitude-0.004, testLong: index.shopLongitude, modalTitle: index.shopName})}}
+              onPress={()=>{this.setState({shopClicked:index.shopId, modalVisible: true, testLat: index.shopLatitude-0.004, testLong: index.shopLongitude, modalTitle: index.shopName})}}
             />
           ))}
 
@@ -322,7 +322,7 @@ export default class App extends Component {
         {/*<Text style={{alignSelf: "center"}}>Postcode: {this.state.postcode} - Borough of: {this.state.city}</Text>*/}
         {/* TEST */}
         <Text style={{alignSelf: "center"}}>Postcode: {this.state.testPostCode} - Borough of: {this.state.testCity}</Text>
-        <Text style={{alignSelf: "center"}}>Loading: {this.state.loading ? "True" : "False"}</Text>
+        <Text style={{alignSelf: "center"}}>{this.state.isLoaded ? "Data collected successfully" : "Wait for the data to be retrieved"}</Text>
         {/* MODAL OPENS WHEN USER CLICKS ON MARKERS */}
         <View>
           <Modal
@@ -346,9 +346,12 @@ export default class App extends Component {
                   height:50
                 }}
               />
-              <View style={{flexDirection: "column", justifyContent:"space-evenly" , margin: 50}}>
-              {/*this.state.loading ? <Text>no products</Text> : this.content()*/}
-              </View>
+              <ScrollView contentContainerStyle={{flexDirection: "column", justifyContent:"space-evenly"}}>
+              {this.state.isLoaded ? this.state.data[this.state.shopClicked.slice(1,-1)].map((index,i) => (
+                <Text key={i}>{index}</Text>
+              )) : <Text>No products</Text>}
+              
+              </ScrollView>
             </View>
           </Modal>
         </View>
