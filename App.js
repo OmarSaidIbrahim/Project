@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, View, StyleSheet, PermissionsAndroid, Image, Modal, Pressable, Dimensions, ScrollView } from 'react-native'
+import { Text, View, StyleSheet, PermissionsAndroid, Image, Modal, Pressable, Dimensions, ScrollView, FlatList, TouchableOpacity } from 'react-native'
 import MapView, {Marker}  from 'react-native-maps';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Geolocation from 'react-native-geolocation-service';
@@ -124,7 +124,6 @@ export default class App extends Component {
       thisData[(+this.state.shopsCoordinates[i].shopId.slice(1,-1))] = []
     }
     this.setState({data: thisData})
-    //console.log("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[0].slice(1,-1))+"?"+urlShops)
     
     var x = 0;
     var counter;
@@ -132,14 +131,14 @@ export default class App extends Component {
     var test = this.state.data
     while(x < this.state.allProducts.length)
     {
-      await fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].slice(1,-1))+"?"+urlShops)
+      await fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].pn.slice(1,-1))+"?"+urlShops)
       .then(response => response.json())
       .then((response) => {
         counter = 0;
-        console.log("Product: "+(+this.state.allProducts[x].slice(1,-1)))
+        console.log("Product: "+(+this.state.allProducts[x].pn.slice(1,-1)))
         if(response.stocks.length > 0)
         {
-          prod = (+this.state.allProducts[x].slice(1,-1))
+          prod = (+this.state.allProducts[x].pn.slice(1,-1))
           while(counter < response.stocks.length)
           {
             //SHOE SIZE = 8 (UK)
@@ -215,13 +214,18 @@ export default class App extends Component {
       .then(response => response.json())
       .then((response) => {
         var x = 0;
-        var newProduct = "";
+        var newProduct = [];
         var allProd;
         while(x < response.products.length)
         {
           //TESTING WITH SHOE SIZE = 8 (UK)
+          //TOGLI JSON STRINGIFY SE NON FA
           try{
-            newProduct = JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].partnumber.substring(0,13))
+            newProduct = {
+              pn: JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].partnumber.substring(0,13)),
+              image: "https://static.bershka.net/4/photos2"+JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].image.url.slice(1,-1))+"_1_1_3.jpg?t="+JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].image.timestamp.slice(1,-1)),
+              price: response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].price.slice(1,-1)
+            }
             allProd = this.state.allProducts
             allProd.push(newProduct)
             x = x + 1;
@@ -230,7 +234,12 @@ export default class App extends Component {
             break;
           }
         }
-        allProd = [...new Set(allProd)];
+        //allProd = [...new Set(allProd)];
+        //Remove duplicates
+        allProd = Array.from(new Set(allProd.map(a => a.pn)))
+        .map(pn => {
+          return allProd.find(a => a.pn === pn)
+        })
         this.setState({allProducts: allProd})
       })
       .catch((error) => {
@@ -254,6 +263,11 @@ export default class App extends Component {
         console.error(error);
       });
   };
+
+  searchPrice = (item) => {
+    let obj = this.state.allProducts.find(o => o.pn == item);
+    console.log(obj)
+  }
 
   render() {
     return (
@@ -335,7 +349,9 @@ export default class App extends Component {
           >
             <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:3, borderTopWidth:3,borderRightWidth: 3, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black"}}>
               <Header
-                leftComponent={{ text: 'Close', style: { color: '#fff' } }}
+                leftComponent={<TouchableOpacity onPress={() => {
+                  this.setState({modalVisible: false, testLat: ((this.state.testLat)+0.004)})
+                }}><Text style={{ color:'white'}}>Close</Text></TouchableOpacity>}
                 centerComponent={{ text: this.state.modalTitle, style: { color: '#fff' } }}
                 rightComponent={{ text: 'Navigate', style: { color: '#fff' } }}
                 containerStyle={{
@@ -346,12 +362,29 @@ export default class App extends Component {
                   height:50
                 }}
               />
-              <ScrollView contentContainerStyle={{flexDirection: "column", justifyContent:"space-evenly"}}>
-              {this.state.isLoaded ? this.state.data[this.state.shopClicked.slice(1,-1)].map((index,i) => (
-                <Text key={i}>{index}</Text>
-              )) : <Text>No products</Text>}
               
-              </ScrollView>
+              {/*this.state.isLoaded ? this.state.data[this.state.shopClicked.slice(1,-1)].map((index,i) => (
+                <Text key={i}>{index}</Text>
+              )) : <Text>No products</Text>*/}
+              {this.state.isLoaded ? 
+              <FlatList
+                data={this.state.data[this.state.shopClicked.slice(1,-1)]}
+                renderItem={({item}) => (
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: 'column',
+                      margin: 1
+                    }}>
+                    {this.searchPrice(item)}
+                    <Text>{item}</Text>
+                  </View>
+                )}
+                //Setting the number of column
+                numColumns={3}
+                keyExtractor={(item, index) => index}
+              />
+              : <Text>No Products</Text>}
             </View>
           </Modal>
         </View>
