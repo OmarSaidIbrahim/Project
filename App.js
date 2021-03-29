@@ -61,7 +61,13 @@ export default class App extends Component {
       //SHOP CLICKED BY THE USER
       shopClicked: null,
       //LOADING DATA
-      isLoaded: false
+      isLoaded: false,
+      //TEST
+      dataTest: {
+        "12543": [1230976020339, 1241376004039, 1241276000139, 1220476000139, 1230476020239, 1230276003239, 1280176010738, 1210066004039, 1200066004039, 1240476000139, 1245266004039, 1243866000139, 1243466020239, 1240066000139, 1240976004039, 1240676004039], 
+        "6958": [1230976020339, 1240176004039, 1240076000139, 1241376004039, 1241276000139, 1270076013139, 1241676000139, 1241776004039, 1220676020339, 1220476000139, 1231276000139, 1231076000439, 1230476020239, 1230276003239, 1280176010738, 1210066004039, 1200066004039, 1240476000139, 1245266004039, 1243866000139, 1243466020239, 1240066000139, 1240676004039], 
+        "8310": [1231876004039, 1230976020339, 1241376004039, 1241276000139, 1220676020339, 1220476000139, 1231076000439, 1230676020239, 1230476020239, 1230276003239, 1240876011739, 1280176010738, 1210066004039, 1260076004039, 1210266004039, 1200066004039, 1240476000139, 1245266004039, 1235266004039, 1243866000139, 1243466020239, 1240066000139, 1240976004039, 1240676004039]
+      }
     }
     
   }
@@ -111,7 +117,8 @@ export default class App extends Component {
   fetchData = async () => {
     const a = await this.getStoresNearby();
     const b = await this.getAllProducts();
-    const c = await this.getProductsLocation();
+    this.setState({isLoaded: true})
+    //const c = await this.getProductsLocation();
   }
   //GET THE LOCATION OF ALL THE PRODUCTS FOUND
   getProductsLocation = async () => {
@@ -191,7 +198,7 @@ export default class App extends Component {
           {
             newShop = {
               shopId: JSON.stringify(response.closerStores[x].id),
-              shopName: JSON.stringify(response.closerStores[x].name),
+              shopName: response.closerStores[x].name,
               shopLatitude: Number(JSON.stringify(response.closerStores[x].latitude)),
               shopLongitude: Number(JSON.stringify(response.closerStores[x].longitude))
             }
@@ -223,8 +230,8 @@ export default class App extends Component {
           try{
             newProduct = {
               pn: JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].partnumber.substring(0,13)),
-              image: "https://static.bershka.net/4/photos2"+JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].image.url.slice(1,-1))+"_1_1_3.jpg?t="+JSON.stringify(response.products[x].bundleProductSummaries[0].detail.colors[0].image.timestamp.slice(1,-1)),
-              price: response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].price.slice(1,-1)
+              image: "https://static.bershka.net/4/photos2/"+response.products[x].bundleProductSummaries[0].detail.colors[0].image.url+"_1_1_3.jpg?t="+response.products[x].bundleProductSummaries[0].detail.colors[0].image.timestamp,
+              price: (response.products[x].bundleProductSummaries[0].detail.colors[0].sizes[0].price)/100
             }
             allProd = this.state.allProducts
             allProd.push(newProduct)
@@ -265,8 +272,13 @@ export default class App extends Component {
   };
 
   searchPrice = (item) => {
-    let obj = this.state.allProducts.find(o => o.pn == item);
-    console.log(obj)
+
+    /*console.log(item)
+    console.log(typeof(item))
+    console.log(this.state.allProducts[0].pn)
+    console.log(typeof(this.state.allProducts[0].pn))*/
+    let obj = this.state.allProducts.find(o => Number(o.pn.slice(1,-1)) === item);
+    return obj.price;
   }
 
   render() {
@@ -368,18 +380,25 @@ export default class App extends Component {
               )) : <Text>No products</Text>*/}
               {this.state.isLoaded ? 
               <FlatList
-                data={this.state.data[this.state.shopClicked.slice(1,-1)]}
-                renderItem={({item}) => (
-                  <View
-                    style={{
-                      flex: 1,
-                      flexDirection: 'column',
-                      margin: 1
-                    }}>
-                    {this.searchPrice(item)}
-                    <Text>{item}</Text>
-                  </View>
-                )}
+                data={this.state.dataTest[this.state.shopClicked.slice(1,-1)]}
+                renderItem={({item}) => {
+                  let obj = this.state.allProducts.find(o => Number(o.pn.slice(1,-1)) === item);
+                  return (
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: 'column',
+                        margin: 10,
+                        alignItems: "center"
+                      }}>
+                      <Image
+                        style={styles.tinyLogo}
+                        source={{uri: obj.image}}
+                      />
+                      <Text>{obj.price}</Text>
+                    </View>
+                  )
+                }}
                 //Setting the number of column
                 numColumns={3}
                 keyExtractor={(item, index) => index}
@@ -413,5 +432,9 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
     width: Dimensions.get('window').width
+  },
+  tinyLogo: {
+    width: 100,
+    height: 100,
   },
  });
