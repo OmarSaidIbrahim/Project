@@ -395,7 +395,7 @@ export default class App extends Component {
                         style={styles.tinyLogo}
                         source={{uri: obj.image}}
                       />
-                      <Text>{obj.price}</Text>
+                      <Text>£{obj.price}</Text>
                     </View>
                   )
                 }}
