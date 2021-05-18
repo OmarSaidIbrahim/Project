@@ -122,6 +122,7 @@ export default class App extends Component {
   }
   //GET THE LOCATION OF ALL THE PRODUCTS FOUND
   getProductsLocation = async () => {
+    //composition of the URL with the stores found and the dictionary of the products
     var urlShops = "physicalStoreId="+(+this.state.shopsCoordinates[0].shopId.slice(1,-1));
     var thisData = {}
     thisData[(+this.state.shopsCoordinates[0].shopId.slice(1,-1))] = []
@@ -131,6 +132,7 @@ export default class App extends Component {
       thisData[(+this.state.shopsCoordinates[i].shopId.slice(1,-1))] = []
     }
     this.setState({data: thisData})
+    //{"shopID": [productsIDs],"shopID": [productsIDs],...}
     
     var x = 0;
     var counter;
@@ -166,8 +168,8 @@ export default class App extends Component {
         }
       })
       .catch((error, response) => {
-        //console.log(error)
-        //console.log(response)
+        console.log(error)
+        console.log(response)
       });
       x=x+1;
     }
@@ -213,7 +215,6 @@ export default class App extends Component {
       .catch((error) => {
         console.error(error);
       });
-      
   }
   //GET ALL PRODUCTS OFF THE WEBSITE
   getAllProducts = () => {
@@ -270,16 +271,6 @@ export default class App extends Component {
         console.error(error);
       });
   };
-
-  searchPrice = (item) => {
-
-    /*console.log(item)
-    console.log(typeof(item))
-    console.log(this.state.allProducts[0].pn)
-    console.log(typeof(this.state.allProducts[0].pn))*/
-    let obj = this.state.allProducts.find(o => Number(o.pn.slice(1,-1)) === item);
-    return obj.price;
-  }
 
   render() {
     return (
