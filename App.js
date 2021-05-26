@@ -6,34 +6,6 @@ import Geolocation from 'react-native-geolocation-service';
 import { Header} from 'react-native-elements';
 import { getDistance } from 'geolib';
 
-//TEST MARKERS
-const shopMarkers = {
-  markers: [{
-    title: 'H&M',
-    coordinates: {
-      latitude: 51.512538,
-      longitude: -0.303592
-    },
-    imageUri: 'https://ceowatermandate.org/wp-content/uploads/2017/08/HM.png'
-  },
-  {
-    title: 'Footlocker',
-    coordinates: {
-      latitude: 51.5127815,
-      longitude: -0.3027705
-    },  
-    imageUri: 'https://diginomica.com/sites/default/files/images/2016-08/foot-locker-final.jpg'
-  },
-  {
-    title: 'River Island',
-    coordinates: {
-      latitude: 51.5130103,
-      longitude: -0.3029769,
-    }, 
-    imageUri: 'https://www.thequays.co.uk/media/uploads/river_island_logo.png'
-  }]
-}
-//----------------
 //BEGINNING
 export default class App extends Component {
   constructor(props) {   
@@ -290,36 +262,7 @@ export default class App extends Component {
           }}
           showsUserLocation = {true}
         >
-          {/* TEST CUSTOM MARKER 
-          {shopMarkers.markers.map((marker,i) => (
-            <MapView.Marker 
-              coordinate={marker.coordinates}
-              title={marker.title}
-              key={i}
-              tracksViewChanges={false}
-              onPress={()=>{this.setState({modalVisible: true, latitude: marker.coordinates.latitude-0.004, longitude: marker.coordinates.longitude, modalTitle: marker.title})}}
-            >
-              <View
-                style={{
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: "#007bff",
-                  padding: 3,
-                  borderRadius: 5,
-                }}
-              >
-                <Image
-                    style={{
-                      width: 50,
-                      height: 50
-                    }}
-                    source={{
-                      uri: marker.imageUri,
-                    }}
-                />
-              </View>
-            </MapView.Marker>
-          ))}*/}
+
           {/* SHOPS FOUND NEAR THE USER LOCATION AND DISPLAYED WITH A MARKER */}
           {this.state.shopsCoordinates.map((index,i) => (
             <Marker
@@ -366,9 +309,6 @@ export default class App extends Component {
                 }}
               />
               
-              {/*this.state.isLoaded ? this.state.data[this.state.shopClicked.slice(1,-1)].map((index,i) => (
-                <Text key={i}>{index}</Text>
-              )) : <Text>No products</Text>*/}
               {this.state.isLoaded ? 
               <FlatList
                 data={this.state.dataTest[this.state.shopClicked.slice(1,-1)]}
