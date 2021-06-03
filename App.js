@@ -12,14 +12,17 @@ export default class App extends Component {
     super(props)
     
     this.state={
+      //COORDINATES RETRIEVED BY GPS
       latitude: null,
       longitude: null,
+      //VIA COORDINATES, GETS ADDRESS
       location: null,
       postcode: null,
       city: null,
+      //MODAL VISIBILITY AND TITLE
       modalVisible: false,
       modalTitle: null,
-      //TESTS IN LONDON
+      //TESTS WITH LONDON'S COORDINATES AND ADDRESS
       testLat: 51.50727,
       testLong: -0.1279706,
       testPostCode: null,
@@ -28,13 +31,13 @@ export default class App extends Component {
       shopsCoordinates: [],
       //RECORD OF ALL PRODUCTS IN THE WEBSITE
       allProducts: [],
-      //DATA
+      //DICTIONARY CONTAINING THE PRODUCTS (VALUE) IN THE SHOPS (KEY)
       data: {},
       //SHOP CLICKED BY THE USER
       shopClicked: null,
       //LOADING DATA
       isLoaded: false,
-      //TEST
+      //TEST OF THE DICTIONARY OF SHOP/PRODUCTS
       dataTest: {
         "12543": [1230976020339, 1241376004039, 1241276000139, 1220476000139, 1230476020239, 1230276003239, 1280176010738, 1210066004039, 1200066004039, 1240476000139, 1245266004039, 1243866000139, 1243466020239, 1240066000139, 1240976004039, 1240676004039], 
         "6958": [1230976020339, 1240176004039, 1240076000139, 1241376004039, 1241276000139, 1270076013139, 1241676000139, 1241776004039, 1220676020339, 1220476000139, 1231276000139, 1231076000439, 1230476020239, 1230276003239, 1280176010738, 1210066004039, 1200066004039, 1240476000139, 1245266004039, 1243866000139, 1243466020239, 1240066000139, 1240676004039], 
@@ -45,8 +48,9 @@ export default class App extends Component {
   }
   //APP CHECKS IF USER HAS GPS ACTIVATED
   hasLocationPermission = () => {
+    //SYNTAX TO DISPLAY THE POP UP OF PERMISSIONS
     try {
-      const granted = PermissionsAndroid.request(
+      const granted = PermissionsAndroid.request( 
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         {
           'title': 'ReactNativeCode Location Permission',
@@ -65,6 +69,7 @@ export default class App extends Component {
   }
   //BEFORE MOUNTING THE APP, THIS METHOD RECEIVES THE USER COORDINATES
   async componentDidMount() {
+    //FOR TESTING PURPOSES, THE GPS IS DEACTIVATED AND CENTRAL LONDON'S COORDINATES ARE USED
     /*if (this.hasLocationPermission) {
       Geolocation.getCurrentPosition(
         (position) => {
@@ -86,6 +91,7 @@ export default class App extends Component {
     //--------------------------------
     this.fetchData();
   }
+  //FETCH THE DATA ASYNCHRONOUSLY (PRODUCTS AND STORES)
   fetchData = async () => {
     const a = await this.getStoresNearby();
     const b = await this.getAllProducts();
@@ -96,22 +102,36 @@ export default class App extends Component {
   getProductsLocation = async () => {
     //composition of the URL with the stores found and the dictionary of the products
     var urlShops = "physicalStoreId="+(+this.state.shopsCoordinates[0].shopId.slice(1,-1));
-    var thisData = {}
-    thisData[(+this.state.shopsCoordinates[0].shopId.slice(1,-1))] = []
     for(var i = 1; i < this.state.shopsCoordinates.length; i++)
     {
       urlShops = urlShops+"&physicalStoreId="+(+this.state.shopsCoordinates[i].shopId.slice(1,-1));
       thisData[(+this.state.shopsCoordinates[i].shopId.slice(1,-1))] = []
     }
+    //COMPOSITION OF THE DICTIONARY
+    var thisData = {}
+    thisData[(+this.state.shopsCoordinates[0].shopId.slice(1,-1))] = []
     this.setState({data: thisData})
-    //{"shopID": [productsIDs],"shopID": [productsIDs],...}
+
+    /**
+     * THE DICTIONARY WILL HAVE THE FOLLOWING STRUCTURE
+     * {
+     *    "shopID": [productsIDs],
+     *    "shopID": [productsIDs],
+     *    ...
+     * }
+     * 
+     * */
     
+    //THE FOLLOWING WHILE LOOP WILL CHECK EVERY PRODUCTS PREVIOUSLY RETRIEVED
+    //IF THEY ARE INSIDE THE SHOPS FOUND AROUND THE USER LOCATION
     var x = 0;
     var counter;
     var prod;
     var test = this.state.data
+    //FOR EACH PRODUCT...
     while(x < this.state.allProducts.length)
     {
+      //THE API IS COMPOSED WITH THE PREVIOUSLY COMPOSED URL
       await fetch("https://itxrest.inditex.com/LOMOServiciosRESTCommerce-ws/common/1/stock/campaign/V2021/product/part-number/"+(+this.state.allProducts[x].pn.slice(1,-1))+"?"+urlShops)
       .then(response => response.json())
       .then((response) => {
@@ -145,8 +165,9 @@ export default class App extends Component {
       });
       x=x+1;
     }
-    console.log("end.")
+    console.log("Done with fetching data...")
     console.log(test)
+    //ONCE ALL THE DATA ARE RETRIEVED AND STORED, THE LOADING STATE CHANGES TO "TRUE"
     this.setState({isLoaded: true})
   }
   //GET STORE NEAR THE USER LOCATION
@@ -214,12 +235,12 @@ export default class App extends Component {
             break;
           }
         }
-        //allProd = [...new Set(allProd)];
-        //Remove duplicates
+        //THE FOLLOWING FUNCTION WILL REMOVE DUPLICATES
         allProd = Array.from(new Set(allProd.map(a => a.pn)))
         .map(pn => {
           return allProd.find(a => a.pn === pn)
         })
+        //UPDATES THE STATE OF THE ARRAY OF PRODUCTS
         this.setState({allProducts: allProd})
       })
       .catch((error) => {
@@ -228,14 +249,17 @@ export default class App extends Component {
   }
   //THE METHOD BELOW WILL RETURN THE CITY AND POSTCODE FROM COORDINATES (UK ONLY)
   getPostcodeAndCityFromApi = () => {
+    //*REMOVED FOR TESTING*
     //return fetch('https://api.postcodes.io/postcodes?lon='+this.state.longitude+'&lat='+this.state.latitude+'')
     return fetch('https://api.postcodes.io/postcodes?lon='+this.state.testLong+'&lat='+this.state.testLat+'')
       .then(response => response.json())
       .then((response) => {
+        //*REMOVED FOR TESTING*
         //const postcode = JSON.stringify(response.result[0].postcode);
         //const city = JSON.stringify(response.result[0].admin_district);
         const testPostCode = JSON.stringify(response.result[0].postcode);
         const testCity = JSON.stringify(response.result[0].admin_district);
+        //*REMOVED FOR TESTING*
         //this.setState({postcode, city})
         this.setState({testPostCode,testCity})
       })
@@ -293,6 +317,7 @@ export default class App extends Component {
               this.setState({modalVisible: false, testLat: ((this.state.testLat)+0.004)})
             }}
           >
+            {/* COMPONENTS CONTAINING THE PRODUCTS OF THE SHOP CLICKED */}
             <View style={{backgroundColor: "white",flex:1, marginTop: 200, borderTopRightRadius: 10,borderTopLeftRadius: 10, borderLeftWidth:3, borderTopWidth:3,borderRightWidth: 3, borderLeftColor:"black",borderTopColor: "black",borderRightColor: "black"}}>
               <Header
                 leftComponent={<TouchableOpacity onPress={() => {
@@ -308,7 +333,9 @@ export default class App extends Component {
                   height:50
                 }}
               />
-              
+              {/* THE PRODUCTS ARE DISPLAYED ONLY ONCE THE DATA ARE FETCHED. 
+              IF THE USER CLICKS ON ONE OF THE STORES BEFORE THE DATA ARE FETCHED, 
+              A TEXT "NO PRODUCTS" WILL BE DISPLAYED */}
               {this.state.isLoaded ? 
               <FlatList
                 data={this.state.dataTest[this.state.shopClicked.slice(1,-1)]}
@@ -330,7 +357,6 @@ export default class App extends Component {
                     </View>
                   )
                 }}
-                //Setting the number of column
                 numColumns={3}
                 keyExtractor={(item, index) => index}
               />
@@ -343,6 +369,7 @@ export default class App extends Component {
   }
 }
 
+//STYLING MUST BE IMPROVED
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
